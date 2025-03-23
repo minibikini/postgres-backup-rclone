@@ -1,5 +1,8 @@
 FROM rclone/rclone:latest
 
+# Reset the entrypoint
+ENTRYPOINT []
+
 # Install PostgreSQL 15 client
 RUN apk add --no-cache postgresql15-client
 
