@@ -59,10 +59,9 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_BROWSER: "off"
-    command: server --console-address ":9001" /data
-    environment:
       MINIO_DOMAIN: s3
       MINIO_REGION: us-east-1
+    command: server --console-address ":9001" /data
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9000/minio/health/live"]
       interval: 5s
