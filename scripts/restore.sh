@@ -14,7 +14,9 @@ if [ $# -eq 1 ]; then
     BACKUP_FILE="$1"
 else
     echo "No backup file specified, getting latest backup..."
-    BACKUP_FILE=$(rclone lsf --format "tp" --include "*.sql.gz" "remote:${BUCKET_NAME}" | sort -nrk1 | head -1 | awk '{print $2}')
+
+    BACKUP_FILE=$(rclone lsl remote:${BUCKET_NAME} --order-by modtime,desc | head -n 1 | awk '{print $NF}')
+
     if [ -z "$BACKUP_FILE" ]; then
         echo "ERROR: No backup files found in remote:${BUCKET_NAME}" >&2
         exit 1

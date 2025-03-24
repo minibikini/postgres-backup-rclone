@@ -38,7 +38,7 @@ EOF
   assert_output --regexp 'postgres-[0-9]{4}-.*\.sql\.gz'
 }
 
-@test "Restore from backup works correctly" {
+@test "Restore from backup works correctly with explicit filename" {
   # Get latest backup name
   backup_name=$(docker compose exec -T minio mc ls s3/backups | awk '/postgres/ {print $NF}' | tail -1)
 
@@ -49,6 +49,19 @@ EOF
 
   # Run restore
   docker compose run --rm backup restore.sh $backup_name
+
+  # Verify table exists after restore
+  run docker compose exec -T postgres psql -U postgres -tAc "SELECT to_regclass('public.test_data')"
+  assert_success
+  assert_output 'test_data'
+}
+
+@test "Restore from latest backup works correctly without filename" {
+  # Drop test table
+  docker compose exec -T postgres psql -U postgres -c "DROP TABLE test_data"
+
+  # Run restore without filename
+  docker compose run --rm backup restore.sh
 
   # Verify table exists after restore
   run docker compose exec -T postgres psql -U postgres -tAc "SELECT to_regclass('public.test_data')"
