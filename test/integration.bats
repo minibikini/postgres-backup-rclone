@@ -64,6 +64,7 @@ EOF
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
 
   # Get timestamp before creating our "latest" backup
+  docker compose run --rm backup backup.sh
   current_time=$(date +%s)
   sleep 2  # Make sure the next backup will have a different timestamp
 
