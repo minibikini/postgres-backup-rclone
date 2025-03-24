@@ -43,7 +43,7 @@ services:
         condition: service_healthy
 
     networks:
-      - postgres-net
+      - internal
 
   minio:
     image: minio/minio:latest
@@ -69,13 +69,10 @@ services:
     depends_on:
       minio:
         condition: service_healthy
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     volumes:
       - minio-data:/data
     networks:
-      - postgres-net
+      - internal
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
