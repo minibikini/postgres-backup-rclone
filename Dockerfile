@@ -19,3 +19,7 @@ RUN pg_dump --version && rclone version
 
 # Default command - Using bash instead of sh
 CMD ["bash"]
+
+LABEL org.opencontainers.image.source=https://github.com/minibikini/postgres-backup-rclone
+LABEL org.opencontainers.image.description="Backup and restore PostgreSQL databases using Rclone"
+LABEL org.opencontainers.image.licenses=MIT
