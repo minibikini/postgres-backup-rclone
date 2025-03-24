@@ -41,7 +41,7 @@ fi
 
 # Test database connection before starting restore
 echo "Testing database connection..."
-if ! PGPASSWORD="${PGPASSWORD:-}" psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DATABASE" -c '\q' >/dev/null 2>&1; then
+if ! PG_PASSWORD="${PG_PASSWORD:-}" psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DATABASE" -c '\q' >/dev/null 2>&1; then
     echo "ERROR: Could not connect to PostgreSQL database" >&2
     exit 1
 fi
@@ -52,7 +52,7 @@ echo "Starting PostgreSQL restore process..."
 echo "Restoring ${BACKUP_FILE} to database ${PG_DATABASE}"
 if ! rclone cat "${RCLONE_REMOTE}:${RCLONE_PATH}/${BACKUP_FILE}" | \
      gunzip | \
-     PGPASSWORD="${PGPASSWORD:-}" psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DATABASE" $PG_EXTRA_OPTS; then
+     PG_PASSWORD="${PG_PASSWORD:-}" psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DATABASE" $PG_EXTRA_OPTS; then
     echo "ERROR: Restore failed" >&2
     exit 1
 fi

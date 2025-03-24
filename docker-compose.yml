@@ -21,8 +21,8 @@ services:
       PG_PORT: 5432
       PG_USER: postgres
       PG_DATABASE: postgres
-      PGPASSWORD: "${POSTGRES_PASSWORD}"
-      
+      PG_PASSWORD: postgres
+
       # Cloudflare R2 configuration
       RCLONE_CONFIG_REMOTE_TYPE: s3
       RCLONE_CONFIG_REMOTE_PROVIDER: Cloudflare
