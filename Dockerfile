@@ -7,7 +7,7 @@ ENTRYPOINT []
 RUN apk add --no-cache postgresql15-client
 
 # Copy backup and restore scripts
-COPY backup.sh restore.sh /usr/local/bin/
+COPY scripts/backup.sh scripts/restore.sh /usr/local/bin/
 
 # Make scripts executable
 RUN chmod +x /usr/local/bin/backup.sh /usr/local/bin/restore.sh
