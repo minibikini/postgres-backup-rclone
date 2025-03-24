@@ -62,19 +62,27 @@ EOF
 
   # Create first backup with initial data
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
-
-  # Get timestamp before creating our "latest" backup
   docker compose run --rm backup backup.sh
-  current_time=$(date +%s)
-  sleep 2  # Make sure the next backup will have a different timestamp
 
-  # Add more data and create a second backup - this should be the latest one
+  # Get timestamp from MinIO container just before creating new backup
+  current_time=$(docker compose exec -T minio date +%s)
+  sleep 2  # Ensure timestamp separation within MinIO's storage
+
+  # Add more data and create second backup
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
   docker compose run --rm backup backup.sh
 
-  # Verify we have a new backup (created after our timestamp)
-  latest_backup=$(docker compose exec -T minio mc ls s3/backups | grep -E 'postgres-.*\.sql\.gz' | sort -r | head -n 1)
-  echo "Latest backup entry: $latest_backup"
+  # Get ISO8601 timestamp using local jq
+  minio_json=$(docker compose exec -T minio mc ls --json s3/backups)
+  latest_backup_iso=$(echo "$minio_json" | jq -rs 'map(select(.key | endswith(".sql.gz"))) | sort_by(.lastModified) | reverse | .[0].lastModified')
+
+  # Convert to Unix timestamp using MinIO container's date command
+  backup_timestamp=$(docker compose exec -T minio date -d "$latest_backup_iso" +%s)
+
+  # Validate comparison
+  [ -n "$latest_backup_iso" ] || { echo "No backup found"; return 1; }
+  [ -n "$backup_timestamp" ] || { echo "Invalid timestamp conversion"; return 1; }
+  assert [ "$backup_timestamp" -gt "$current_time" ]
 
   # Drop test table
   docker compose exec -T postgres psql -U postgres -c "DROP TABLE test_data"
