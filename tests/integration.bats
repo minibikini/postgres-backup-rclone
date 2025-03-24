@@ -17,23 +17,14 @@ teardown_file() {
 }
 
 wait_for() {
-  local host=$1 port=$2
+  local service=$1 port=$2
   for _ in {1..30}; do
-    case "$host" in
-      postgres)
-        if docker compose exec -T $host sh -c "pg_isready -U postgres"; then
-          return 0
-        fi
-        ;;
-      minio)
-        if docker compose exec -T $host sh -c "curl -s -o /dev/null -w '%{http_code}' http://localhost:9000/minio/health/live | grep 200"; then
-          return 0
-        fi
-        ;;
-    esac
+    if docker compose exec -T $service sh -c "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/$port'"; then
+      return 0
+    fi
     sleep 1
   done
-  echo "Service $host did not become ready in time"
+  echo "Service $service:$port did not become ready in time"
   exit 1
 }
 
