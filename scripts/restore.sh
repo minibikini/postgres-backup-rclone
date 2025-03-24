@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-BACKUP_FILE="$1"
-
 # Default values
 : "${POSTGRES_HOST:=localhost}"
 : "${POSTGRES_PORT:=5432}"
@@ -11,6 +9,17 @@ BACKUP_FILE="$1"
 : "${POSTGRES_DB:=postgres}"
 : "${BUCKET_NAME:=backups}"
 
+# Get backup file from argument or use latest
+if [ $# -eq 1 ]; then
+    BACKUP_FILE="$1"
+else
+    echo "No backup file specified, getting latest backup..."
+    BACKUP_FILE=$(rclone lsf --format "tp" --include "*.sql.gz" "remote:${BUCKET_NAME}" | sort -nrk1 | head -1 | awk '{print $2}')
+    if [ -z "$BACKUP_FILE" ]; then
+        echo "ERROR: No backup files found in remote:${BUCKET_NAME}" >&2
+        exit 1
+    fi
+fi
 
 # Check if backup exists in S3
 echo "Checking if backup exists: remote:${BUCKET_NAME}/${BACKUP_FILE}"
@@ -30,9 +39,7 @@ echo "Starting PostgreSQL restore process..."
 
 # Stream restore directly from S3 to PostgreSQL
 echo "Restoring ${BACKUP_FILE} to database ${POSTGRES_DB}"
-if ! rclone cat "remote:${BUCKET_NAME}/${BACKUP_FILE}" | \
-     gunzip | \
-     PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
+if ! rclone cat "remote:${BUCKET_NAME}/${BACKUP_FILE}" |      gunzip |      PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
     echo "ERROR: Restore failed" >&2
     exit 1
 fi
