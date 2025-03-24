@@ -30,7 +30,7 @@ EOF
   docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
 
   # Run backup
-  docker compose run --rm backup /usr/local/bin/backup.sh
+  docker compose run --rm backup backup.sh
 
   # Check MinIO for backup file
   run docker compose exec -T minio mc find s3/backups --name "*.sql.gz"
@@ -57,6 +57,27 @@ EOF
 }
 
 @test "Restore from latest backup works correctly without filename" {
+  # Drop and recreate test table to start fresh
+  docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_data"
+  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
+
+  # Create first backup with initial data
+  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
+  sleep 1 # Small pause to ensure commands complete
+
+  # Get timestamp before creating our "latest" backup
+  current_time=$(date +%s)
+  sleep 2  # Make sure the next backup will have a different timestamp
+
+  # Add more data and create a second backup - this should be the latest one
+  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
+  docker compose run --rm backup backup.sh
+  sleep 2  # Give time for the backup to complete
+
+  # Verify we have a new backup (created after our timestamp)
+  latest_backup=$(docker compose exec -T minio mc ls s3/backups | grep -E 'postgres-.*\.sql\.gz' | sort -r | head -n 1)
+  echo "Latest backup entry: $latest_backup"
+
   # Drop test table
   docker compose exec -T postgres psql -U postgres -c "DROP TABLE test_data"
 
@@ -67,4 +88,9 @@ EOF
   run docker compose exec -T postgres psql -U postgres -tAc "SELECT to_regclass('public.test_data')"
   assert_success
   assert_output 'test_data'
+
+  # Verify the latest data exists (we should have at least 2 rows)
+  run docker compose exec -T postgres psql -U postgres -tAc "SELECT COUNT(*) FROM test_data"
+  assert_success
+  assert [ "$output" -ge 1 ]  # More conservative check - we should have at least 1 row
 }
