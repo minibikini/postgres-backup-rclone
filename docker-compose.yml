@@ -50,7 +50,25 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_BROWSER: "off"
     command: server --console-address ":9001" /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  # Test helper with MinIO client
+  mc:
+    image: minio/mc:latest
+    entrypoint: ""
+    command: >
+      /bin/sh -c "
+      until mc alias set s3 http://minio:9000 minioadmin minioadmin; do sleep 1; done
+      tail -f /dev/null"
+    depends_on:
+      minio:
+        condition: service_healthy
     ports:
       - "9000:9000"
       - "9001:9001"
