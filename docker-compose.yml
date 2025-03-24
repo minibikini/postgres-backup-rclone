@@ -1,0 +1,73 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    networks:
+      - internal
+
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      # PostgreSQL Connection
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
+
+      # S3 Configuration
+
+      BUCKET_NAME: backups
+      # RCLONE_S3_ENV_AUTH: "true"
+      RCLONE_CONFIG_REMOTE_TYPE: s3
+      RCLONE_CONFIG_REMOTE_PROVIDER: Minio
+      RCLONE_CONFIG_REMOTE_ENDPOINT: "http://minio:9000"
+      RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID: minioadmin
+      RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY: minioadmin
+      BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
+
+    command: >
+      sh -c "echo '$${BACKUP_SCHEDULE} backup.sh 2>&1 | logger -t pg_backup'
+      | crontab - && crond -f"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - internal
+
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    command: server --console-address ":9001" /data
+    healthcheck:
+      test:
+        ["CMD", "sh", "-c", "curl -sf http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    networks:
+      - internal
+
+volumes:
+  minio-data:
+
+networks:
+  internal:
