@@ -36,4 +36,4 @@ if ! PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES
   exit 1
 fi
 
-echo "Backup complete: ${BACKUP_NAME}.dump.gz"
+echo "Backup complete: ${BACKUP_NAME}.sql.gz"

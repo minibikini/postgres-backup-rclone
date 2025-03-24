@@ -1,4 +1,6 @@
 #!/usr/bin/env bats
+load bats-support/load
+load bats-assert/load
 
 setup_file() {
   export COMPOSE_PROJECT_NAME="backup_test_$(date +%s)"
@@ -10,6 +12,11 @@ setup_file() {
   sleep 5
   wait_for postgres 5432
   wait_for minio 9000
+
+  # Configure MinIO bucket permissions
+  docker compose exec -T minio mc alias set s3 http://minio:9000 minioadmin minioadmin
+  docker compose exec -T minio mc mb s3/backups
+  docker compose exec -T minio mc anonymous set public s3/backups
 }
 
 teardown_file() {
