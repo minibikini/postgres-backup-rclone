@@ -16,7 +16,7 @@ else
     echo "No backup file specified, getting latest backup..."
 
     # List files, filter for postgres backup files, sort by filename, and get the newest
-    BACKUP_FILE=$(rclone lsf remote:${BUCKET_NAME} | grep -E '^postgres-.*\.sql\.gz$' | sort -r | head -n 1)
+    BACKUP_FILE=$(rclone lsf remote:"${BUCKET_NAME}" | grep -E '^postgres-.*\.sql\.gz$' | sort -r | head -n 1)
 
     if [ -z "$BACKUP_FILE" ]; then
         echo "ERROR: No backup files found in remote:${BUCKET_NAME}" >&2
