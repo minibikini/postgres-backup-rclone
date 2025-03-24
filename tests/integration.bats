@@ -2,9 +2,8 @@
 
 setup_file() {
   export COMPOSE_PROJECT_NAME="backup_test_$(date +%s)"
-  docker compose up -d postgres minio
   docker compose build backup
-  docker compose up -d
+  docker compose up -d --wait postgres minio backup
 
   # Wait for services to be healthy
   # Add slight delay before checking ports

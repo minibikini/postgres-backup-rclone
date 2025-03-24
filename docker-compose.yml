@@ -14,7 +14,9 @@ services:
       - internal
 
   backup:
-    image: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - ./backup.sh:/usr/local/bin/backup.sh
       - ./restore.sh:/usr/local/bin/restore.sh
