@@ -13,6 +13,9 @@ jobs:
   build-and-push-image:
     name: Build and push Docker image
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        postgres_version: [15, 16, 17]
     permissions:
       contents: read
       packages: write
@@ -41,12 +44,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
+            type=raw,value=${{ matrix.postgres_version }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ matrix.postgres_version == '17' && github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         id: build-and-push
@@ -56,6 +58,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            POSTGRES_VERSION=${{ matrix.postgres_version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64

@@ -5,8 +5,11 @@ ENTRYPOINT []
 
 RUN apk add --no-cache bash
 
-# Install PostgreSQL 15 client
-RUN apk add --no-cache postgresql15-client
+# Add build argument for PostgreSQL version with latest (17) as default
+ARG POSTGRES_VERSION=17
+
+# Install PostgreSQL client
+RUN apk add --no-cache postgresql${POSTGRES_VERSION}-client
 
 # Copy backup and restore scripts
 COPY scripts/backup.sh scripts/restore.sh /usr/local/bin/

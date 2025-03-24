@@ -10,10 +10,13 @@ jobs:
   docker-build:
     name: Docker Build Test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        postgres_version: [15, 16, 17]
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -t postgres-backup-test .
+        run: docker build -t postgres-backup-test --build-arg POSTGRES_VERSION=${{ matrix.postgres_version }} .
 
   shellcheck:
     name: ShellCheck Linting
@@ -29,6 +32,14 @@ jobs:
     name: Bats Test
     runs-on: ubuntu-latest
     needs: [docker-build, shellcheck]
+    strategy:
+      matrix:
+        postgres_version: [15, 16, 17]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres_version }}
+        env:
+          POSTGRES_PASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,3 +47,7 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm test
+        env:
+          POSTGRES_VERSION: ${{ matrix.postgres_version }}
+          PG_HOST: postgres
+          PG_PASSWORD: postgres
