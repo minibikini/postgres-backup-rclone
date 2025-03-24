@@ -17,10 +17,6 @@ echo "Starting PostgreSQL backup process..."
 # Create and upload backup in a pipeline
 echo "Creating and uploading backup to s3:${BUCKET_NAME}/${BACKUP_NAME}.sql.gz"
 
-# echo "pg_dump -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
-
-# echo "TESTING" | rclone --progress -v rcat "remote:${BUCKET_NAME}/test.txt"
-
 if ! PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" 2>/dev/stderr | \
     cat | \
     gzip | \
