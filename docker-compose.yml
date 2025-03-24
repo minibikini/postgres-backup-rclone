@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -34,7 +34,7 @@ services:
       RCLONE_CONFIG_REMOTE_ENDPOINT: "http://minio:9000"
       RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID: minioadmin
       RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY: minioadmin
-      BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
+      BACKUP_SCHEDULE: "0 1 * * *"
 
     command: >
       sh -c "echo '$${BACKUP_SCHEDULE} backup.sh 2>&1 | logger -t pg_backup'
