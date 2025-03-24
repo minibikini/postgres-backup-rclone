@@ -26,14 +26,14 @@
 
 ## **Restore Script Implementation**
 
-- [ ] Implement core restore pipeline:
+- [x] Implement core restore pipeline:
       `rclone cat | gunzip | psql`
   - Verify: Can restore test database from backup
-- [ ] Add backup file existence check
+- [x] Add backup file existence check
   - Verify: `restore.sh invalid_file` exits with error
-- [ ] Add database connection validation
+- [x] Add database connection validation
   - Verify: Script fails if PostgreSQL credentials are wrong
-- [ ] Implement argument validation (requires filename)
+- [x] Implement argument validation (requires filename)
   - Verify: `restore.sh` without args shows usage
 
 ## **Docker Compose Integration**
