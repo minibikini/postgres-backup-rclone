@@ -17,5 +17,5 @@ RUN chmod +x /usr/local/bin/backup.sh /usr/local/bin/restore.sh
 # Validate installation
 RUN pg_dump --version && rclone version
 
-# Default command
-CMD ["sh"]
+# Default command - Using bash instead of sh
+CMD ["bash"]
