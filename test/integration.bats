@@ -92,5 +92,5 @@ EOF
   # Verify the latest data exists (we should have at least 2 rows)
   run docker compose exec -T postgres psql -U postgres -tAc "SELECT COUNT(*) FROM test_data"
   assert_success
-  assert [ "$output" -ge 1 ]  # More conservative check - we should have at least 1 row
+  assert_equal $output  2
 }
