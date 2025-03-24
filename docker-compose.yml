@@ -27,14 +27,13 @@ services:
       POSTGRES_PASSWORD: postgres
 
       # S3 Configuration
-
       BUCKET_NAME: backups
       RCLONE_CONFIG_REMOTE_TYPE: s3
       RCLONE_CONFIG_REMOTE_PROVIDER: Minio
       RCLONE_CONFIG_REMOTE_ENDPOINT: "http://minio:9000"
       RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID: minioadmin
       RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY: minioadmin
-      BACKUP_SCHEDULE: "0 1 * * *"
+      BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
 
     command: >
       sh -c "echo '$${BACKUP_SCHEDULE} backup.sh 2>&1 | logger -t pg_backup'
