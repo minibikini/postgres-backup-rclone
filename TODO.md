@@ -2,23 +2,23 @@
 
 ## **Docker Image Setup**
 
-- [ ] Create Dockerfile with `rclone/rclone` base
+- [x] Create Dockerfile with `rclone/rclone` base
   - Verify: `docker build` succeeds without errors
-- [ ] Install `postgresql15-client` in image
+- [x] Install `postgresql15-client` in image
   - Verify: `docker run --rm image pg_dump --version` shows v15
-- [ ] Copy backup/restore scripts to `/usr/local/bin`
+- [x] Copy backup/restore scripts to `/usr/local/bin`
   - Verify: `docker run --rm image ls /usr/local/bin` shows scripts
-- [ ] Make scripts executable in Dockerfile
+- [x] Make scripts executable in Dockerfile
   - Verify: `docker run --rm image sh -c "test -x /usr/local/bin/backup.sh"`
 
 ## **Backup Script Implementation**
 
-- [ ] Implement core streaming pipeline:
+- [x] Implement core streaming pipeline:
       `pg_dump | gzip | rclone rcat`
   - Verify: Creates S3 object with correct name pattern
-- [ ] Add timestamp generation (ISO8601 format)
+- [x] Add timestamp generation (ISO8601 format)
   - Verify: Filenames contain `2024-03-15T14:30:00Z` format
-- [ ] Validate required environment variables:
+- [x] Validate required environment variables:
       `POSTGRES_HOST, POSTGRES_USER, POSTGRES_DB, RCLONE_S3_BUCKET`
   - Verify: Script exits with error if any are missing
 - [ ] Implement connection testing pre-flight check
@@ -54,11 +54,11 @@
 
 ## **Error Handling & Logging**
 
-- [ ] Add `set -euo pipefail` to all scripts
+- [x] Add `set -euo pipefail` to all scripts
   - Verify: Failed command in pipeline exits script
 - [ ] Implement trap for cleanup operations
   - Verify: Temporary files removed on script exit
-- [ ] Add error context messages to stderr
+- [x] Add error context messages to stderr
   - Verify: `PGPASSWORD=wrong ./backup.sh` shows meaningful error
 - [ ] Set up logging via `logger`
   - Verify: `docker logs backup` shows backup attempts
