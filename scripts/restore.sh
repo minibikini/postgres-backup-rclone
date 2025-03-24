@@ -1,13 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Validate command line arguments
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <backup-filename>" >&2
-    echo "Example: $0 2024-03-24T12:00:00Z.sql.gz" >&2
-    exit 1
-fi
-
 BACKUP_FILE="$1"
 
 # Default values
@@ -20,8 +13,8 @@ BACKUP_FILE="$1"
 
 
 # Check if backup exists in S3
-echo "Checking if backup exists: s3:${BUCKET_NAME}/${BACKUP_FILE}"
-if ! rclone lsf "s3:${BUCKET_NAME}/${BACKUP_FILE}" >/dev/null 2>&1; then
+echo "Checking if backup exists: remote:${BUCKET_NAME}/${BACKUP_FILE}"
+if ! rclone lsf "remote:${BUCKET_NAME}/${BACKUP_FILE}" >/dev/null 2>&1; then
     echo "ERROR: Backup file not found: ${BACKUP_FILE}" >&2
     exit 1
 fi
@@ -36,7 +29,7 @@ fi
 echo "Starting PostgreSQL restore process..."
 
 # Stream restore directly from S3 to PostgreSQL
-echo "Restoring ${BACKUP_FILE} to database ${PG_DATABASE}"
+echo "Restoring ${BACKUP_FILE} to database ${POSTGRES_DB}"
 if ! rclone cat "remote:${BUCKET_NAME}/${BACKUP_FILE}" | \
      gunzip | \
      PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
