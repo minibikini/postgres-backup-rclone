@@ -29,7 +29,6 @@ services:
       # S3 Configuration
 
       BUCKET_NAME: backups
-      # RCLONE_S3_ENV_AUTH: "true"
       RCLONE_CONFIG_REMOTE_TYPE: s3
       RCLONE_CONFIG_REMOTE_PROVIDER: Minio
       RCLONE_CONFIG_REMOTE_ENDPOINT: "http://minio:9000"
