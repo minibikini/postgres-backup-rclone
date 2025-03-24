@@ -2,23 +2,23 @@
 
 ## **Docker Image Setup**
 
-- [x] Create Dockerfile with `rclone/rclone` base
+- [ ] Create Dockerfile with `rclone/rclone` base
   - Verify: `docker build` succeeds without errors
-- [x] Install `postgresql15-client` in image
+- [ ] Install `postgresql15-client` in image
   - Verify: `docker run --rm image pg_dump --version` shows v15
-- [x] Copy backup/restore scripts to `/usr/local/bin`
+- [ ] Copy backup/restore scripts to `/usr/local/bin`
   - Verify: `docker run --rm image ls /usr/local/bin` shows scripts
-- [x] Make scripts executable in Dockerfile
+- [ ] Make scripts executable in Dockerfile
   - Verify: `docker run --rm image sh -c "test -x /usr/local/bin/backup.sh"`
 
 ## **Backup Script Implementation**
 
-- [x] Implement core streaming pipeline:
+- [ ] Implement core streaming pipeline:
       `pg_dump | gzip | rclone rcat`
   - Verify: Creates S3 object with correct name pattern
-- [x] Add timestamp generation (ISO8601 format)
+- [ ] Add timestamp generation (ISO8601 format)
   - Verify: Filenames contain `2024-03-15T14:30:00Z` format
-- [x] Validate required environment variables:
+- [ ] Validate required environment variables:
       `POSTGRES_HOST, POSTGRES_USER, POSTGRES_DB, RCLONE_S3_BUCKET`
   - Verify: Script exits with error if any are missing
 - [ ] Implement connection testing pre-flight check
@@ -26,40 +26,40 @@
 
 ## **Restore Script Implementation**
 
-- [x] Implement core restore pipeline:
+- [ ] Implement core restore pipeline:
       `rclone cat | gunzip | psql`
   - Verify: Can restore test database from backup
-- [x] Add backup file existence check
+- [ ] Add backup file existence check
   - Verify: `restore.sh invalid_file` exits with error
-- [x] Add database connection validation
+- [ ] Add database connection validation
   - Verify: Script fails if PostgreSQL credentials are wrong
-- [x] Implement argument validation (requires filename)
+- [ ] Implement argument validation (requires filename)
   - Verify: `restore.sh` without args shows usage
 
 ## **Docker Compose Integration**
 
-- [x] Create backup service definition
+- [ ] Create backup service definition
   - Verify: `docker compose up backup` starts successfully
-- [x] Configure environment variables:
+- [ ] Configure environment variables:
   ```yaml
   POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD
   RCLONE_S3_* variables
   BACKUP_SCHEDULE
   ```
   - Verify: Variables propagate to container
-- [x] Implement cron scheduling
+- [ ] Implement cron scheduling
   - Verify: `docker exec backup crontab -l` shows schedule
-- [x] Set up network dependencies
+- [ ] Set up network dependencies
   - Verify: Backup container can ping PostgreSQL host
 
 ## **Error Handling & Logging**
 
-- [x] Add `set -euo pipefail` to all scripts
+- [ ] Add `set -euo pipefail` to all scripts
   - Verify: Failed command in pipeline exits script
 - [ ] Implement trap for cleanup operations
   - Verify: Temporary files removed on script exit
-- [x] Add error context messages to stderr
-  - Verify: `PGPASSWORD=wrong ./backup.sh` shows meaningful error
+- [ ] Add error context messages to stderr
+  - Verify: `PG_PASSWORD=wrong ./backup.sh` shows meaningful error
 - [ ] Set up logging via `logger`
   - Verify: `docker logs backup` shows backup attempts
 
