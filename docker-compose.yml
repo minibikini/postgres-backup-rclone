@@ -16,14 +16,14 @@ services:
   backup:
     build: .
     environment:
-      # PostgreSQL connection
-      PG_HOST: postgres
-      PG_PORT: 5432
-      PG_USER: postgres
-      PG_DATABASE: postgres
-      PG_PASSWORD: postgres
+      # PostgreSQL Connection
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: postgres
 
-      # Cloudflare R2 configuration
+      # S3 Configuration
       RCLONE_CONFIG_REMOTE_TYPE: s3
       RCLONE_CONFIG_REMOTE_PROVIDER: Minio
       RCLONE_CONFIG_REMOTE_ENDPOINT: "http://minio:9000"
@@ -34,10 +34,9 @@ services:
       RCLONE_PATH: "${BACKUP_PATH:-backups}"
       BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
 
-    entrypoint: ["/bin/sh", "-c"]
-    command: |
-      echo "$${BACKUP_SCHEDULE} /usr/local/bin/backup.sh" > /var/spool/cron/crontabs/root && \
-      crond -f -d 8
+    command: >
+      sh -c "echo '$${BACKUP_SCHEDULE} /usr/local/bin/backup.sh 2>&1 | logger -t pg_backup'
+      | crontab - && crond -f"
 
     depends_on:
       postgres:
@@ -51,10 +50,12 @@ services:
     environment:
       MINIO_ROOT_USER: test
       MINIO_ROOT_PASSWORD: test
-    command: server /data
+    command: server --console-address ":9001" /data
     ports:
       - "9000:9000"
       - "9001:9001"
+    volumes:
+      - minio-data:/data
     networks:
       - postgres-net
     healthcheck:
@@ -62,6 +63,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+volumes:
+  minio-data:
 
 networks:
   postgres-net:
