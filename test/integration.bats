@@ -62,7 +62,6 @@ EOF
 
   # Create first backup with initial data
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
-  sleep 1 # Small pause to ensure commands complete
 
   # Get timestamp before creating our "latest" backup
   current_time=$(date +%s)
@@ -71,7 +70,6 @@ EOF
   # Add more data and create a second backup - this should be the latest one
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
   docker compose run --rm backup backup.sh
-  sleep 2  # Give time for the backup to complete
 
   # Verify we have a new backup (created after our timestamp)
   latest_backup=$(docker compose exec -T minio mc ls s3/backups | grep -E 'postgres-.*\.sql\.gz' | sort -r | head -n 1)
@@ -82,11 +80,6 @@ EOF
 
   # Run restore without filename
   docker compose run --rm backup restore.sh
-
-  # Verify table exists after restore
-  run docker compose exec -T postgres psql -U postgres -tAc "SELECT to_regclass('public.test_data')"
-  assert_success
-  assert_output 'test_data'
 
   # Verify the latest data exists (we should have at least 2 rows)
   run docker compose exec -T postgres psql -U postgres -tAc "SELECT COUNT(*) FROM test_data"
