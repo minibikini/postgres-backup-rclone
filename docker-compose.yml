@@ -36,8 +36,8 @@ services:
       RCLONE_S3_BUCKET: backups
       RCLONE_S3_ENV_AUTH: "true"
       RCLONE_CONFIG_S3_TYPE: s3
-      RCLONE_CONFIG_S3_PROVIDER: ${RCLONE_S3_PROVIDER}
-      RCLONE_CONFIG_S3_ENDPOINT: ${RCLONE_S3_ENDPOINT}
+      RCLONE_CONFIG_S3_PROVIDER: "Other"
+      RCLONE_CONFIG_S3_ENDPOINT: "http://minio:9000"
       BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
 
     command: >
@@ -59,6 +59,8 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_BROWSER: "off"
+    volumes:
+      - minio-data:/data
       MINIO_DOMAIN: s3
       MINIO_REGION: us-east-1
     command: server --console-address ":9001" /data
@@ -74,13 +76,11 @@ services:
     entrypoint: ""
     command: >
       /bin/sh -c "
-      until mc alias set s3 http://minio:9000 minioadmin minioadmin; do sleep 1; done
+      mc alias set s3 http://minio:9000 minioadmin minioadmin && 
       tail -f /dev/null"
     depends_on:
       minio:
         condition: service_healthy
-    volumes:
-      - minio-data:/data
     networks:
       - internal
     healthcheck:

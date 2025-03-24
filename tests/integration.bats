@@ -26,7 +26,7 @@ wait_for() {
         fi
         ;;
       minio)
-        if docker compose exec -T $host sh -c "curl -s -o /dev/null -w '%{http_code}' http://localhost:9000/minio/health/live | grep -q 200"; then
+        if docker compose exec -T $host sh -c "curl -s -o /dev/null -w '%{http_code}' http://localhost:9000/minio/health/live | grep 200"; then
           return 0
         fi
         ;;
