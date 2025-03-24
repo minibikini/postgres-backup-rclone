@@ -31,16 +31,7 @@ services:
       # S3 Configuration
       RCLONE_S3_PROVIDER: "Other"
       RCLONE_S3_ACCESS_KEY_ID: minioadmin
-      RCLONE_S3_SECRET_ACCESS_KEY: minioadmin
-      RCLONE_S3_BUCKET: backups
-      RCLONE_S3_ENV_AUTH: "true"
-      RCLONE_CONFIG_S3_TYPE: s3
-      RCLONE_CONFIG_S3_PROVIDER: "Other"
-      RCLONE_CONFIG_S3_ENDPOINT: "http://minio:9000"
-      BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
-      RCLONE_S3_ENDPOINT: "http://minio:9000"
-      RCLONE_S3_ACCESS_KEY_ID: minioadmin
-      RCLONE_S3_SECRET_ACCESS_KEY: minioadmin
+      RCLONE_S3_SECRET_ACCESS_KEY: minioadmin      
       RCLONE_S3_BUCKET: backups
       RCLONE_S3_ENV_AUTH: "true"
       RCLONE_CONFIG_S3_TYPE: s3
@@ -67,15 +58,11 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_BROWSER: "off"
+      MINIO_DOMAIN: s3
+      MINIO_REGION: us-east-1
     volumes:
       - minio-data:/data
     command: server --console-address ":9001" /data
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_BROWSER: "off"
-      MINIO_DOMAIN: s3
-      MINIO_REGION: us-east-1
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -sf http://localhost:9000/minio/health/live"]
       interval: 5s
