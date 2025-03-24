@@ -1,0 +1,38 @@
+services:
+  backup:
+    build: .
+    environment:
+      # PostgreSQL connection
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: postgres
+      PG_DATABASE: postgres
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      
+      # S3 configuration
+      RCLONE_CONFIG_REMOTE_TYPE: s3
+      RCLONE_CONFIG_REMOTE_PROVIDER: AWS
+      RCLONE_CONFIG_REMOTE_ENV_AUTH: "true"
+      RCLONE_CONFIG_REMOTE_REGION: "${AWS_REGION}"
+      RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+      RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+      
+      # Backup configuration
+      RCLONE_PATH: "${BACKUP_PATH:-backups}"
+      BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
+      
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      echo "$${BACKUP_SCHEDULE} /usr/local/bin/backup.sh" > /var/spool/cron/crontabs/root && \
+      crond -f -d 8
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    networks:
+      - postgres-net
+
+networks:
+  postgres-net:
+    external: true
