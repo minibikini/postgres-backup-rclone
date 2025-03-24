@@ -19,7 +19,7 @@
 - [ ] Add timestamp generation (ISO8601 format)
   - Verify: Filenames contain `2024-03-15T14:30:00Z` format
 - [ ] Validate required environment variables:
-      `POSTGRES_HOST, POSTGRES_USER, POSTGRES_DB, RCLONE_S3_BUCKET`
+      `POSTGRES_HOST, POSTGRES_USER, POSTGRES_DB, BUCKET_NAME`
   - Verify: Script exits with error if any are missing
 - [ ] Implement connection testing pre-flight check
   - Verify: Script fails fast if PostgreSQL is unreachable

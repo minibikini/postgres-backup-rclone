@@ -17,10 +17,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    volumes:
-      - ./backup.sh:/usr/local/bin/backup.sh
-      - ./restore.sh:/usr/local/bin/restore.sh
-      - ./tests:/bats
+
     environment:
       # PostgreSQL Connection
       POSTGRES_HOST: postgres
@@ -30,14 +27,14 @@ services:
       POSTGRES_PASSWORD: postgres
 
       # S3 Configuration
-      RCLONE_S3_PROVIDER: "Other"
-      RCLONE_S3_ACCESS_KEY_ID: minioadmin
-      RCLONE_S3_SECRET_ACCESS_KEY: minioadmin      
-      RCLONE_S3_BUCKET: backups
-      RCLONE_S3_ENV_AUTH: "true"
-      RCLONE_CONFIG_S3_TYPE: s3
-      RCLONE_CONFIG_S3_PROVIDER: "Other"
-      RCLONE_CONFIG_S3_ENDPOINT: "http://minio:9000"
+
+      BUCKET_NAME: backups
+      # RCLONE_S3_ENV_AUTH: "true"
+      RCLONE_CONFIG_REMOTE_TYPE: s3
+      RCLONE_CONFIG_REMOTE_PROVIDER: Minio
+      RCLONE_CONFIG_REMOTE_ENDPOINT: "http://minio:9000"
+      RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID: minioadmin
+      RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY: minioadmin
       BACKUP_SCHEDULE: "${BACKUP_SCHEDULE:-0 1 * * *}"
 
     command: >
@@ -49,7 +46,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-
     networks:
       - internal
 
@@ -58,14 +54,15 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_BROWSER: "off"
-      MINIO_DOMAIN: s3
-      MINIO_REGION: us-east-1
+      # MINIO_BROWSER: "off"
+      # MINIO_DOMAIN: s3
+      # MINIO_REGION: us-east-1
     volumes:
       - minio-data:/data
     command: server --console-address ":9001" /data
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -sf http://localhost:9000/minio/health/live"]
+      test:
+        ["CMD", "sh", "-c", "curl -sf http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 5s
       retries: 15
@@ -76,7 +73,7 @@ services:
     entrypoint: ""
     command: >
       /bin/sh -c "
-      mc alias set s3 http://minio:9000 minioadmin minioadmin && 
+      mc alias set s3 http://minio:9000 minioadmin minioadmin &&
       tail -f /dev/null"
     depends_on:
       minio:

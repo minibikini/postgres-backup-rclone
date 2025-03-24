@@ -87,7 +87,7 @@
 - **Pre-Restore Validation**:
   ```bash
   # restore.sh
-  if ! rclone ls "s3:${RCLONE_S3_BUCKET}/$1" > /dev/null; then
+  if ! rclone ls "s3:${BUCKET_NAME}/$1" > /dev/null; then
     echo "Error: Backup file $1 not found."
     exit 1
   fi
@@ -119,7 +119,7 @@ services:
       RCLONE_S3_PROVIDER: "Other"
       RCLONE_S3_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       RCLONE_S3_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      RCLONE_S3_BUCKET: ${S3_BUCKET}
+      BUCKET_NAME: ${S3_BUCKET}
       RCLONE_S3_ENDPOINT: ${S3_HOST}
       RCLONE_S3_REGION: "" # Optional
 

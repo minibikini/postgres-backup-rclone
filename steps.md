@@ -1,6 +1,7 @@
 # Step-by-Step Implementation Blueprint
 
 ## **Phase 1: Core Components**
+
 ### **1.1 Docker Image Setup**
 
 ```text
@@ -16,6 +17,7 @@ Test command:
 ```
 
 ### **1.2 Backup Script (Stream to S3)**
+
 ```text
 Implement backup.sh with:
 - `set -euo pipefail` for strict error handling
@@ -29,6 +31,7 @@ Test case:
 ```
 
 ### **1.3 Restore Script (Stream from S3)**
+
 ```text
 Implement restore.sh with:
 - Argument validation for backup filename
@@ -43,7 +46,9 @@ Test case:
 ---
 
 ## **Phase 2: Docker Integration**
+
 ### **2.1 Docker Compose Service**
+
 ```text
 Create docker-compose.yml snippet:
 - Backup service using built image
@@ -57,17 +62,20 @@ Test command:
 ```
 
 ### **2.2 Environment Validation**
+
 ```text
 Add startup check to backup.sh:
 - Verify PostgreSQL is reachable via `pg_isready`
-- Validate S3 connectivity with `rclone lsd s3:${RCLONE_S3_BUCKET}`
+- Validate S3 connectivity with `rclone lsd s3:${BUCKET_NAME}`
 - Exit with clear error messages before backup attempts
 ```
 
 ---
 
 ## **Phase 3: Error Handling & Logging**
+
 ### **3.1 Pipeline Error Trapping**
+
 ```text
 Enhance scripts with:
 - Trap signals (EXIT, ERR) for cleanup
@@ -77,6 +85,7 @@ Enhance scripts with:
 ```
 
 ### **3.2 Structured Logging**
+
 ```text
 Implement logging:
 - JSON-formatted logs with timestamps
@@ -88,7 +97,9 @@ Implement logging:
 ---
 
 ## **Phase 4: Testing Infrastructure**
+
 ### **4.1 Bats Test Framework**
+
 ```text
 Create test/unit.bats with:
 - Mock PostgreSQL container
@@ -98,6 +109,7 @@ Create test/unit.bats with:
 ```
 
 ### **4.2 CI Pipeline**
+
 ```text
 Add GitHub Actions workflow:
 - Build Docker image
@@ -109,7 +121,9 @@ Add GitHub Actions workflow:
 ---
 
 ## **Phase 5: Deployment & Validation**
+
 ### **5.1 Manual Test Checklist**
+
 ```text
 Validation steps:
 1. Start PostgreSQL + MinIO containers
@@ -121,6 +135,7 @@ Validation steps:
 ```
 
 ### **5.2 Monitoring Integration**
+
 ```text
 Add:
 - Prometheus metrics endpoint
@@ -134,6 +149,7 @@ Add:
 # Iterative Implementation Prompts
 
 ## **Prompt 1: Docker Image Foundation**
+
 ```dockerfile
 FROM rclone/rclone:latest
 RUN apk add --no-cache postgresql15-client
@@ -143,6 +159,7 @@ HEALTHCHECK --interval=30s CMD pg_isready -h $POSTGRES_HOST -U $POSTGRES_USER
 ```
 
 ## **Prompt 2: Backup Script Core**
+
 ```bash
 #!/bin/bash
 set -euo pipefail
@@ -152,22 +169,24 @@ FILENAME="${POSTGRES_DB}_${TIMESTAMP}.sql.gz"
 
 pg_dump -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   | gzip \
-  | rclone rcat "s3:${RCLONE_S3_BUCKET}/${FILENAME}"
+  | rclone rcat "s3:${BUCKET_NAME}/${FILENAME}"
 ```
 
 ## **Prompt 3: Restore Script Core**
+
 ```bash
 #!/bin/bash
 set -euo pipefail
 
 BACKUP_FILE="$1"
 
-rclone cat "s3:${RCLONE_S3_BUCKET}/${BACKUP_FILE}" \
+rclone cat "s3:${BUCKET_NAME}/${BACKUP_FILE}" \
   | gunzip \
   | psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 ```
 
 ## **Prompt 4: Docker Compose Integration**
+
 ```yaml
 services:
   backup:
@@ -176,7 +195,7 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret
-      RCLONE_S3_BUCKET: backups
+      BUCKET_NAME: backups
       RCLONE_S3_ENDPOINT: http://minio:9000
     command: >
       sh -c "echo '$${BACKUP_SCHEDULE} /usr/local/bin/backup.sh 2>&1 | logger -t pgbackup'
@@ -184,6 +203,7 @@ services:
 ```
 
 ## **Prompt 5: Error Handling Upgrade**
+
 ```bash
 # In backup.sh
 if ! pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; then
@@ -191,13 +211,14 @@ if ! pg_isready -h "$POSTGRES_HOST" -U "$POSTGRES_USER"; then
   exit 1
 fi
 
-if ! rclone lsd "s3:${RCLONE_S3_BUCKET}" >/dev/null 2>&1; then
+if ! rclone lsd "s3:${BUCKET_NAME}" >/dev/null 2>&1; then
   echo "S3 bucket inaccessible" >&2
   exit 1
 fi
 ```
 
 ## **Prompt 6: Final Integration**
+
 ```bash
 # Test command sequence
 docker compose up -d postgres minio
