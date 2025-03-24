@@ -2,16 +2,15 @@
 set -euo pipefail
 
 # Default values
-: "${PG_HOST:=localhost}"
-: "${PG_PORT:=5432}"
-: "${PG_USER:=postgres}"
-: "${PG_DATABASE:=postgres}"
-: "${RCLONE_REMOTE:=remote}"
-: "${RCLONE_PATH:=backups}"
+: "${POSTGRES_HOST:=localhost}"
+: "${POSTGRES_PORT:=5432}"
+: "${POSTGRES_USER:=postgres}"
+: "${POSTGRES_DB:=postgres}"
+: "${RCLONE_S3_BUCKET:=backups}"
 
 # Validate required environment variables
 missing_vars=0
-for var in PG_HOST PG_PORT PG_USER PG_DATABASE RCLONE_REMOTE RCLONE_PATH; do
+for var in POSTGRES_HOST POSTGRES_PORT POSTGRES_USER POSTGRES_DB RCLONE_S3_BUCKET; do
   if [[ -z "${!var}" ]]; then
     echo "ERROR: ${var} environment variable is not set" >&2
     missing_vars=$((missing_vars + 1))
@@ -29,10 +28,10 @@ BACKUP_NAME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 echo "Starting PostgreSQL backup process..."
 
 # Create and upload backup in a pipeline
-echo "Creating and uploading backup to ${RCLONE_REMOTE}:${RCLONE_PATH}/${BACKUP_NAME}.dump.gz"
-if ! pg_dump -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DATABASE" -F c $PG_EXTRA_OPTS 2>/dev/stderr | \
+echo "Creating and uploading backup to s3:${RCLONE_S3_BUCKET}/${BACKUP_NAME}.sql.gz"
+if ! PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=plain --no-owner --no-acl 2>/dev/stderr | \
      gzip | \
-     rclone rcat "${RCLONE_REMOTE}:${RCLONE_PATH}/${BACKUP_NAME}.dump.gz"; then
+     rclone rcat "s3:${RCLONE_S3_BUCKET}/${BACKUP_NAME}.sql.gz"; then
   echo "ERROR: Backup failed" >&2
   exit 1
 fi

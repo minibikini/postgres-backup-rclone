@@ -11,16 +11,15 @@ fi
 BACKUP_FILE="$1"
 
 # Default values
-: "${PG_HOST:=localhost}"
-: "${PG_PORT:=5432}"
-: "${PG_USER:=postgres}"
-: "${PG_DATABASE:=postgres}"
-: "${RCLONE_REMOTE:=remote}"
-: "${RCLONE_PATH:=backups}"
+: "${POSTGRES_HOST:=localhost}"
+: "${POSTGRES_PORT:=5432}"
+: "${POSTGRES_USER:=postgres}"
+: "${POSTGRES_DB:=postgres}"
+: "${RCLONE_S3_BUCKET:=backups}"
 
 # Validate required environment variables
 missing_vars=0
-for var in PG_HOST PG_PORT PG_USER PG_DATABASE RCLONE_REMOTE RCLONE_PATH; do
+for var in POSTGRES_HOST POSTGRES_PORT POSTGRES_USER POSTGRES_DB RCLONE_S3_BUCKET; do
     if [[ -z "${!var}" ]]; then
         echo "ERROR: ${var} environment variable is not set" >&2
         missing_vars=$((missing_vars + 1))
@@ -33,15 +32,15 @@ if [[ $missing_vars -gt 0 ]]; then
 fi
 
 # Check if backup exists in S3
-echo "Checking if backup exists: ${RCLONE_REMOTE}:${RCLONE_PATH}/${BACKUP_FILE}"
-if ! rclone lsf "${RCLONE_REMOTE}:${RCLONE_PATH}/${BACKUP_FILE}" >/dev/null 2>&1; then
+echo "Checking if backup exists: s3:${RCLONE_S3_BUCKET}/${BACKUP_FILE}"
+if ! rclone lsf "s3:${RCLONE_S3_BUCKET}/${BACKUP_FILE}" >/dev/null 2>&1; then
     echo "ERROR: Backup file not found: ${BACKUP_FILE}" >&2
     exit 1
 fi
 
 # Test database connection before starting restore
 echo "Testing database connection..."
-if ! PG_PASSWORD="${PG_PASSWORD:-}" psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DATABASE" -c '\q' >/dev/null 2>&1; then
+if ! PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q' >/dev/null 2>&1; then
     echo "ERROR: Could not connect to PostgreSQL database" >&2
     exit 1
 fi
@@ -50,9 +49,9 @@ echo "Starting PostgreSQL restore process..."
 
 # Stream restore directly from S3 to PostgreSQL
 echo "Restoring ${BACKUP_FILE} to database ${PG_DATABASE}"
-if ! rclone cat "${RCLONE_REMOTE}:${RCLONE_PATH}/${BACKUP_FILE}" | \
+if ! rclone cat "s3:${RCLONE_S3_BUCKET}/${BACKUP_FILE}" | \
      gunzip | \
-     PG_PASSWORD="${PG_PASSWORD:-}" psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DATABASE" $PG_EXTRA_OPTS; then
+     PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
     echo "ERROR: Restore failed" >&2
     exit 1
 fi
