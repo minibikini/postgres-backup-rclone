@@ -58,8 +58,7 @@ EOF
 
 @test "Restore from latest backup works correctly without filename" {
   # Drop and recreate test table to start fresh
-  docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_data"
-  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
+  docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_data; CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
 
   # Create first backup with initial data
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
