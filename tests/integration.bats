@@ -3,9 +3,12 @@
 setup_file() {
   export COMPOSE_PROJECT_NAME="backup_test_$(date +%s)"
   docker compose up -d postgres minio
-  docker compose up --build --no-start backup
+  docker compose build backup
+  docker compose up -d
 
   # Wait for services to be healthy
+  # Add slight delay before checking ports
+  sleep 5
   wait_for postgres 5432
   wait_for minio 9000
 }
@@ -27,8 +30,11 @@ wait_for() {
 }
 
 @test "Container starts and services are healthy" {
+  # Give containers more time to start
+  sleep 3
   run docker compose ps --services --filter 'status=running'
   assert_output - <<EOF
+backup
 minio
 postgres
 EOF
