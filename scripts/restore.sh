@@ -15,12 +15,15 @@ if [ $# -eq 1 ]; then
 else
     echo "No backup file specified, getting latest backup..."
 
-    BACKUP_FILE=$(rclone lsl remote:${BUCKET_NAME} --order-by modtime,desc | head -n 1 | awk '{print $NF}')
+    # List files ordered by time, newest first, and get just the filename
+    BACKUP_FILE=$(rclone lsf remote:${BUCKET_NAME} --order-by modtime,desc --format p | head -n 1)
 
     if [ -z "$BACKUP_FILE" ]; then
         echo "ERROR: No backup files found in remote:${BUCKET_NAME}" >&2
         exit 1
     fi
+
+    echo "Latest backup file: ${BACKUP_FILE}"
 fi
 
 # Check if backup exists in S3
@@ -41,7 +44,7 @@ echo "Starting PostgreSQL restore process..."
 
 # Stream restore directly from S3 to PostgreSQL
 echo "Restoring ${BACKUP_FILE} to database ${POSTGRES_DB}"
-if ! rclone cat "remote:${BUCKET_NAME}/${BACKUP_FILE}" |      gunzip |      PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
+if ! rclone cat "remote:${BUCKET_NAME}/${BACKUP_FILE}" | gunzip | PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; then
     echo "ERROR: Restore failed" >&2
     exit 1
 fi
