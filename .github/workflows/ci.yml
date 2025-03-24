@@ -1,4 +1,4 @@
-name: Bats CI
+name: CI
 
 on:
   push:
