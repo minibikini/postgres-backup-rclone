@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load test_helper/bats-support/load
-load test_helper/bats-assert/load
+load "../node_modules/bats-assert/load.bash";
+load "../node_modules/bats-support/load.bash";
 
 setup_file() {
   docker compose build backup
