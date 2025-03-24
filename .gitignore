@@ -2,3 +2,4 @@
 .DS_Store
 .env
 .ra-aid
+node_modules
