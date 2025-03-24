@@ -14,7 +14,10 @@ services:
       - postgres-net
 
   backup:
-    build: .
+    image: ghcr.io/minibikini/postgres-backup-rclone:15
+    volumes:
+      - ./backup.sh:/usr/local/bin/backup.sh
+      - ./restore.sh:/usr/local/bin/restore.sh
     environment:
       # PostgreSQL Connection
       POSTGRES_HOST: postgres
