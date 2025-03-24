@@ -1,43 +1,22 @@
 #!/usr/bin/env bats
-load bats-support/load
-load bats-assert/load
+
+load test_helper/bats-support/load
+load test_helper/bats-assert/load
 
 setup_file() {
-  export COMPOSE_PROJECT_NAME="backup_test_$(date +%s)"
   docker compose build backup
-  docker compose up -d --wait postgres minio backup
+  docker compose up -d --wait
 
-  # Wait for services to be healthy
-  # Add slight delay before checking ports
-  sleep 5
-  wait_for postgres 5432
-  wait_for minio 9000
-
-  # Configure MinIO bucket permissions
+  # Configure MinIO bucket
   docker compose exec -T minio mc alias set s3 http://minio:9000 minioadmin minioadmin
   docker compose exec -T minio mc mb s3/backups
-  docker compose exec -T minio mc anonymous set public s3/backups
 }
 
 teardown_file() {
   docker compose down -v --remove-orphans
 }
 
-wait_for() {
-  local service=$1 port=$2
-  for _ in {1..30}; do
-    if docker compose exec -T $service sh -c "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/$port'"; then
-      return 0
-    fi
-    sleep 1
-  done
-  echo "Service $service:$port did not become ready in time"
-  exit 1
-}
-
 @test "Container starts and services are healthy" {
-  # Give containers more time to start
-  sleep 3
   run docker compose ps --services --filter 'status=running'
   assert_output - <<EOF
 backup
@@ -49,26 +28,28 @@ EOF
 @test "Manual backup creates object in MinIO" {
   # Create test data
   docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
-  
+
   # Run backup
   docker compose run --rm backup /usr/local/bin/backup.sh
-  
+
   # Check MinIO for backup file
   run docker compose exec -T minio mc find s3/backups --name "*.sql.gz"
   assert_success
-  assert_output --regexp 'postgres_[0-9]{4}-.*\.sql\.gz'
+  assert_output --regexp 'postgres-[0-9]{4}-.*\.sql\.gz'
 }
 
 @test "Restore from backup works correctly" {
   # Get latest backup name
   backup_name=$(docker compose exec -T minio mc ls s3/backups | awk '/postgres/ {print $NF}' | tail -1)
-  
+
+  echo $(docker compose exec -T minio mc ls s3/backups)
+
   # Drop test table
   docker compose exec -T postgres psql -U postgres -c "DROP TABLE test_data"
-  
+
   # Run restore
-  docker compose run --rm backup /usr/local/bin/restore.sh "$backup_name"
-  
+  docker compose run --rm backup restore.sh $backup_name
+
   # Verify table exists after restore
   run docker compose exec -T postgres psql -U postgres -tAc "SELECT to_regclass('public.test_data')"
   assert_success
