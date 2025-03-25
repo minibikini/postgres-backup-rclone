@@ -7,9 +7,9 @@ setup_file() {
   docker compose build backup
   docker compose up -d --wait
 
-  # Configure MinIO bucket
+  # Configure MinIO bucket, ignore error if bucket exists
   docker compose exec -T minio mc alias set s3 http://minio:9000 minioadmin minioadmin
-  docker compose exec -T minio mc mb s3/backups
+  docker compose exec -T minio mc mb s3/backups || true
 }
 
 teardown_file() {
