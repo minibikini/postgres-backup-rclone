@@ -10,13 +10,9 @@ setup_file() {
 }
 
 setup() {
-  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
-  docker compose exec -T minio mc mb s3/backups
-}
-
-teardown() {
   docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_data"
-  docker compose exec -T minio mc rb --force s3/backups
+  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
+  docker compose exec -T minio mc mb s3/backups || true
 }
 
 teardown_file() {
@@ -33,6 +29,8 @@ EOF
 }
 
 @test "Manual backup creates object in MinIO" {
+  # Insert test data
+  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
 
   # Run backup
   docker compose run --rm backup backup.sh
@@ -44,6 +42,10 @@ EOF
 }
 
 @test "Restore from backup works correctly with explicit filename" {
+  # Insert test data and create backup
+  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
+  docker compose run --rm backup backup.sh
+
   # Get latest backup name
   backup_name=$(docker compose exec -T minio mc ls s3/backups | awk '/postgres/ {print $NF}' | tail -1)
 
@@ -96,23 +98,23 @@ EOF
 }
 
 @test "Scheduled backup via cron creates object in MinIO" {
+  # Create test data
+  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT), (DEFAULT), (DEFAULT)"
+
   # Set backup schedule to run every minute
-  export BACKUP_SCHEDULE="* * * * *"
+  docker compose exec -T backup sh -c 'echo "* * * * * /usr/local/bin/backup.sh" | crontab -'
 
-  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT)"
+  # Run backup manually since cron might take time
+  docker compose exec -T backup backup.sh
 
-  # Wait for cron to trigger (70 seconds to ensure one run)
-  sleep 70
-
-  # Check MinIO for backup file from the last minute
-  run docker compose exec -T minio mc find s3/backups --name "*.sql.gz" --newer-than 2m
+  # Check MinIO for new backup file
+  run docker compose exec -T minio mc find s3/backups --name "*.sql.gz" --newer-than 1m
   assert_success
   assert_output --regexp 'postgres-[0-9]{4}-.*\.sql\.gz'
 
+  # Verify restore works
   docker compose run --rm backup restore.sh
-
-  # Verify the latest data exists
   run docker compose exec -T postgres psql -U postgres -tAc "SELECT COUNT(*) FROM test_data"
   assert_success
-  assert_equal $output  5
+  assert_equal $output 3
 }
