@@ -46,8 +46,8 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - run: npm test
+      - run: POSTGRES_VERSION=${{ matrix.postgres_version }} npm test
         env:
-          POSTGRES_VERSION: ${{ matrix.postgres_version }}
           PG_HOST: postgres
           PG_PASSWORD: postgres
+          COMPOSE_PROJECT_NAME: test-${{ matrix.postgres_version }}
