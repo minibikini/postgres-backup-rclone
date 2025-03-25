@@ -95,3 +95,23 @@ EOF
   assert_success
   assert_equal $output  2
 }
+
+@test "Scheduled backup via cron creates object in MinIO" {
+  # Set backup schedule to run every minute
+  export BACKUP_SCHEDULE="* * * * *"
+
+  # Recreate backup service with new schedule
+  docker compose up -d --force-recreate backup
+
+  # Create test data
+  docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_data; CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
+  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
+
+  # Wait for cron to trigger (70 seconds to ensure one run)
+  sleep 70
+
+  # Check MinIO for backup file from the last minute
+  run docker compose exec -T minio mc find s3/backups --name "*.sql.gz" --newer-than 2m
+  assert_success
+  assert_output --regexp 'postgres-[0-9]{4}-.*\.sql\.gz'
+}
