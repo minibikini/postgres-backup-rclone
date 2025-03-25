@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -27,7 +27,6 @@ services:
       POSTGRES_PASSWORD: postgres
 
       # S3 Configuration
-
       BUCKET_NAME: backups
       RCLONE_CONFIG_REMOTE_TYPE: s3
       RCLONE_CONFIG_REMOTE_PROVIDER: Minio
