@@ -1,15 +1,22 @@
 #!/usr/bin/env bats
 
-load "../node_modules/bats-assert/load.bash";
-load "../node_modules/bats-support/load.bash";
+load "../node_modules/bats-assert/load.bash"
+load "../node_modules/bats-support/load.bash"
 
 setup_file() {
   docker compose build backup
   docker compose up -d --wait
-
-  # Configure MinIO bucket, ignore error if bucket exists
   docker compose exec -T minio mc alias set s3 http://minio:9000 minioadmin minioadmin
-  docker compose exec -T minio mc mb s3/backups || true
+}
+
+setup() {
+  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
+  docker compose exec -T minio mc mb s3/backups
+}
+
+teardown() {
+  docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_data"
+  docker compose exec -T minio mc rb --force s3/backups
 }
 
 teardown_file() {
@@ -26,8 +33,6 @@ EOF
 }
 
 @test "Manual backup creates object in MinIO" {
-  # Create test data
-  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
 
   # Run backup
   docker compose run --rm backup backup.sh
@@ -39,6 +44,7 @@ EOF
 }
 
 @test "Restore from backup works correctly with explicit filename" {
+
   # Get latest backup name
   backup_name=$(docker compose exec -T minio mc ls s3/backups | awk '/postgres/ {print $NF}' | tail -1)
 
@@ -57,10 +63,6 @@ EOF
 }
 
 @test "Restore from latest backup works correctly without filename" {
-  # Drop and recreate test table to start fresh
-  docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_data; CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
-
-  # Create first backup with initial data
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT)"
   docker compose run --rm backup backup.sh
 
@@ -100,10 +102,9 @@ EOF
   # Set backup schedule to run every minute
   export BACKUP_SCHEDULE="* * * * *"
 
-
-  # Create test data
-  docker compose exec -T postgres psql -U postgres -c "DROP TABLE IF EXISTS test_schedule; CREATE TABLE test_schedule (id SERIAL PRIMARY KEY)"
-  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_schedule VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT)"
+  # Create test table with data
+  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
+  docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT)"
 
   # Wait for cron to trigger (70 seconds to ensure one run)
   sleep 70
