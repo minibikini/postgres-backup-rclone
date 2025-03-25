@@ -44,11 +44,8 @@ EOF
 }
 
 @test "Restore from backup works correctly with explicit filename" {
-
   # Get latest backup name
   backup_name=$(docker compose exec -T minio mc ls s3/backups | awk '/postgres/ {print $NF}' | tail -1)
-
-  echo $(docker compose exec -T minio mc ls s3/backups)
 
   # Drop test table
   docker compose exec -T postgres psql -U postgres -c "DROP TABLE test_data"
@@ -102,8 +99,6 @@ EOF
   # Set backup schedule to run every minute
   export BACKUP_SCHEDULE="* * * * *"
 
-  # Create test table with data
-  docker compose exec -T postgres psql -U postgres -c "CREATE TABLE test_data (id SERIAL PRIMARY KEY)"
   docker compose exec -T postgres psql -U postgres -c "INSERT INTO test_data VALUES (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT), (DEFAULT)"
 
   # Wait for cron to trigger (70 seconds to ensure one run)
@@ -116,8 +111,8 @@ EOF
 
   docker compose run --rm backup restore.sh
 
-  # Verify the latest data exists (we should have at least 2 rows)
-  run docker compose exec -T postgres psql -U postgres -tAc "SELECT COUNT(*) FROM test_schedule"
+  # Verify the latest data exists
+  run docker compose exec -T postgres psql -U postgres -tAc "SELECT COUNT(*) FROM test_data"
   assert_success
   assert_equal $output  5
 }
