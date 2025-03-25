@@ -104,11 +104,11 @@ EOF
   # Set backup schedule to run every minute
   docker compose exec -T backup sh -c 'echo "* * * * * /usr/local/bin/backup.sh" | crontab -'
 
-  # Run backup manually since cron might take time
-  docker compose exec -T backup backup.sh
-
+  # Wait for cron execution (60s + buffer)
+  sleep 65
+  
   # Check MinIO for new backup file
-  run docker compose exec -T minio mc find s3/backups --name "*.sql.gz" --newer-than 1m
+  run docker compose exec -T minio mc find s3/backups --name "*.sql.gz" --newer-than 30s
   assert_success
   assert_output --regexp 'postgres-[0-9]{4}-.*\.sql\.gz'
 
