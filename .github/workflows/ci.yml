@@ -37,7 +37,7 @@ jobs:
         postgres_version: [15, 16, 17]
     services:
       postgres:
-        image: postgres:${{ matrix.postgres_version }}
+        image: postgres:${{ matrix.postgres_version }}-alpine
         env:
           POSTGRES_PASSWORD: postgres
     steps:

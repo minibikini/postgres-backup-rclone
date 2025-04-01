@@ -9,7 +9,8 @@ RUN apk add --no-cache bash
 ARG POSTGRES_VERSION=17
 
 # Install PostgreSQL client
-RUN apk add --no-cache postgresql${POSTGRES_VERSION}-client
+RUN apk add --no-cache postgresql${POSTGRES_VERSION}-client || \
+    apk add --no-cache postgresql-client
 
 # Copy backup and restore scripts
 COPY scripts/backup.sh scripts/restore.sh /usr/local/bin/
