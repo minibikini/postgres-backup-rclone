@@ -19,7 +19,7 @@ echo "Creating and uploading backup to remote:${BUCKET_NAME}/${BACKUP_NAME}.sql.
 
 if ! PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DATABASE" 2>/dev/stderr | \
     gzip | \
-    rclone -v rcat "remote:${BUCKET_NAME}/${BACKUP_NAME}.sql.gz"; then
+    rclone -v rcat --s3-no-check-bucket -q "remote:${BUCKET_NAME}/${BACKUP_NAME}.sql.gz"; then
   echo "ERROR: Backup failed" >&2
   exit 1
 fi
